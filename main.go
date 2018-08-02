@@ -11,4 +11,5 @@ func main() {
 	if err != nil {
 		log.Fatalf("Couldn't load dotenv: %s", err)
 	}
+
 }
