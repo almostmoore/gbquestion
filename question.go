@@ -28,9 +28,9 @@ func NewQuestionStorage(DB *bolt.DB) *QuestionStorage {
 	}
 }
 
-// Insert creates a new question into db
-func (qs *QuestionStorage) Insert(q Question) (uint64, error) {
-	var id uint64
+// Put creates or updates a question into db
+func (qs *QuestionStorage) Put(q Question) (uint64, error) {
+	id := q.ID
 
 	err := qs.db.Batch(func(tx *bolt.Tx) error {
 		b, err := tx.CreateBucketIfNotExists(questionsBucketName)
@@ -38,9 +38,11 @@ func (qs *QuestionStorage) Insert(q Question) (uint64, error) {
 			return err
 		}
 
-		id, err = b.NextSequence()
-		if err != nil {
-			return err
+		if id == 0 {
+			id, err = b.NextSequence()
+			if err != nil {
+				return err
+			}
 		}
 
 		q.ID = id
@@ -53,25 +55,6 @@ func (qs *QuestionStorage) Insert(q Question) (uint64, error) {
 	})
 
 	return id, err
-}
-
-// Update renews a question in the database
-func (qs *QuestionStorage) Update(q Question) error {
-	data, err := json.Marshal(q)
-	if err != nil {
-		return err
-	}
-
-	id := uinttob(q.ID)
-
-	return qs.db.Batch(func(tx *bolt.Tx) error {
-		b, err := tx.CreateBucketIfNotExists(questionsBucketName)
-		if err != nil {
-			return err
-		}
-
-		return b.Put(id, data)
-	})
 }
 
 // Get returns a question by it's ID
