@@ -71,3 +71,11 @@ func (qs *QuestionStorage) Get(id uint64) (Question, error) {
 
 	return q, err
 }
+
+// Delete func removes question by id
+func (qs *QuestionStorage) Delete(id uint64) error {
+	return qs.db.Batch(func(tx *bolt.Tx) error {
+		b := tx.Bucket(questionsBucketName)
+		return b.Delete(utils.Uinttob(id))
+	})
+}

@@ -35,6 +35,7 @@ func (s *Server) Run() {
 	r.HandleFunc("/", s.insertQuestionHandler).Methods(http.MethodPost)
 	r.HandleFunc("/{id:[0-9]+}", s.getQuestionHandler).Methods(http.MethodGet)
 	r.HandleFunc("/{id:[0-9]+}", s.updateQuestionHandler).Methods(http.MethodPut)
+	r.HandleFunc("/{id:[0-9]+}", s.deleteQuestionHandler).Methods(http.MethodDelete)
 
 	loggedRouter := handlers.LoggingHandler(os.Stdout, r)
 
@@ -148,4 +149,32 @@ func (s *Server) updateQuestionHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	encoder.Encode(q)
+}
+
+func (s *Server) deleteQuestionHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "application/json")
+	encoder := json.NewEncoder(w)
+
+	vars := mux.Vars(r)
+	id, err := strconv.ParseUint(vars["id"], 10, 64)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		encoder.Encode(map[string]string{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	err = s.qs.Delete(id)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		encoder.Encode(map[string]string{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
