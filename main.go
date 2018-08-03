@@ -4,6 +4,8 @@ import (
 	"log"
 	"os"
 
+	"github.com/almostmoore/gbquestion/rest"
+	"github.com/almostmoore/gbquestion/storage"
 	"github.com/boltdb/bolt"
 	"github.com/joho/godotenv"
 )
@@ -20,8 +22,8 @@ func main() {
 	}
 	defer db.Close()
 
-	qs := NewQuestionStorage(db)
+	qs := storage.NewQuestionStorage(db)
 
-	server := NewServer(os.Getenv("HTTP_BIND"), qs)
+	server := rest.NewServer(os.Getenv("HTTP_BIND"), qs)
 	server.Run()
 }

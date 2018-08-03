@@ -1,8 +1,9 @@
-package main
+package storage
 
 import (
 	"encoding/json"
 
+	"github.com/almostmoore/gbquestion/utils"
 	"github.com/boltdb/bolt"
 )
 
@@ -51,7 +52,7 @@ func (qs *QuestionStorage) Put(q Question) (uint64, error) {
 			return err
 		}
 
-		return b.Put(uinttob(id), data)
+		return b.Put(utils.Uinttob(id), data)
 	})
 
 	return id, err
@@ -64,7 +65,7 @@ func (qs *QuestionStorage) Get(id uint64) (Question, error) {
 	err := qs.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(questionsBucketName)
 
-		data := b.Get(uinttob(id))
+		data := b.Get(utils.Uinttob(id))
 		return json.Unmarshal(data, &q)
 	})
 

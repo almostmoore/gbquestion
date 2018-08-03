@@ -1,22 +1,26 @@
-package main
+package rest
 
 import (
 	"encoding/json"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+
+	"github.com/almostmoore/gbquestion/storage"
+	"github.com/almostmoore/gbquestion/vars"
 )
 
 // Server struct represens a server
 type Server struct {
 	addr string
-	qs   *QuestionStorage
+	qs   *storage.QuestionStorage
 }
 
 // NewServer creates a new server
-func NewServer(addr string, qs *QuestionStorage) *Server {
+func NewServer(addr string, qs *storage.QuestionStorage) *Server {
 	return &Server{
 		addr: addr,
 		qs:   qs,
@@ -32,7 +36,9 @@ func (s *Server) Run() {
 	r.HandleFunc("/{id:[0-9]+}", s.getQuestionHandler).Methods(http.MethodGet)
 	r.HandleFunc("/{id:[0-9]+}", s.updateQuestionHandler).Methods(http.MethodPut)
 
-	http.ListenAndServe(s.addr, handlers.CORS()(r))
+	loggedRouter := handlers.LoggingHandler(os.Stdout, r)
+
+	http.ListenAndServe(s.addr, loggedRouter)
 }
 
 func (s *Server) versionHandler(w http.ResponseWriter, r *http.Request) {
@@ -41,7 +47,7 @@ func (s *Server) versionHandler(w http.ResponseWriter, r *http.Request) {
 
 	encoder := json.NewEncoder(w)
 	encoder.Encode(map[string]string{
-		"version": version,
+		"version": vars.Version,
 	})
 }
 
@@ -75,7 +81,7 @@ func (s *Server) insertQuestionHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 	encoder := json.NewEncoder(w)
 
-	var q Question
+	var q storage.Question
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&q)
 	if err != nil {
@@ -118,7 +124,7 @@ func (s *Server) updateQuestionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var q Question
+	var q storage.Question
 	err = decoder.Decode(&q)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
