@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"encoding/binary"
 	"encoding/json"
 
 	"github.com/almostmoore/gbquestion/utils"
@@ -15,6 +16,13 @@ type Question struct {
 	Text     string `json:"text"`
 	IsGood   bool   `json:"is_good"`
 	IsActive bool   `json:"is_active"`
+}
+
+// QuestionFilter struct used for question filtration
+type QuestionFilter struct {
+	IsActive  bool
+	Limit     int
+	IgnoreIds []uint64
 }
 
 // QuestionStorage stores questions
@@ -78,4 +86,42 @@ func (qs *QuestionStorage) Delete(id uint64) error {
 		b := tx.Bucket(questionsBucketName)
 		return b.Delete(utils.Uinttob(id))
 	})
+}
+
+// Filter func searches questions by filter
+func (qs *QuestionStorage) Filter(filter *QuestionFilter) ([]Question, error) {
+	questions := make([]Question, 0, filter.Limit)
+
+	ignoreIds := make(map[uint64]bool, len(filter.IgnoreIds))
+	for i := 0; i < len(filter.IgnoreIds); i++ {
+		ignoreIds[filter.IgnoreIds[i]] = true
+	}
+
+	err := qs.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket(questionsBucketName)
+		c := b.Cursor()
+
+		for k, v := c.First(); k != nil && len(questions) < filter.Limit; k, v = c.Next() {
+			uintKey := binary.BigEndian.Uint64(k)
+			if ignoreIds[uintKey] {
+				continue
+			}
+
+			var q Question
+			err := json.Unmarshal(v, &q)
+			if err != nil {
+				return err
+			}
+
+			if q.IsActive != filter.IsActive {
+				continue
+			}
+
+			questions = append(questions, q)
+		}
+
+		return nil
+	})
+
+	return questions, err
 }
