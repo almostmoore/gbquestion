@@ -8,7 +8,7 @@
 
 ```
 DB_PATH=/path/to/data.db (bolt)
-HTTP_BIND=127.0.0.1:9976
+LISTEN=127.0.0.1:9976
 ```
 
 If you don't want to create `.env` file just set same environment variables

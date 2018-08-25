@@ -1,0 +1,34 @@
+syntax="proto3";
+
+package question;
+
+message Question {
+    uint64 id = 1;
+    string text = 2;
+    bool isGood = 3;
+    bool isActive = 4;
+}
+
+message QuestionList {
+    repeated Question questions = 1;
+}
+
+message Filter {
+    bool isActive = 1;
+    int32 limit = 2;
+    int32 offset = 3;
+    repeated uint64 ignoreIds = 4;
+}
+
+message IdRequest {
+    uint64 id = 1;
+}
+
+message Void {}
+
+service Questions {
+    rpc List(Filter) returns(QuestionList) {}
+    rpc Put(Question) returns (Question) {}
+    rpc Get(IdRequest) returns (Question) {}
+    rpc Delete(IdRequest) returns(Void) {}
+}
